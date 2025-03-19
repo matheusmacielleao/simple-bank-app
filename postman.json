@@ -1,0 +1,296 @@
+{
+  "info": {
+    "name": "AccountService API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Reset state before starting tests",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/reset",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["reset"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Should return OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.response.to.have.body(\"OK\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get balance for non-existing account",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/balance?account_id=1234",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["balance"],
+          "query": [{ "key": "account_id", "value": "1234" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Should return 404 and body 0\", function () {",
+              "    pm.response.to.have.status(404);",
+              "    pm.expect(pm.response.text()).to.eql('0');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create account with initial balance",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"type\":\"deposit\", \"destination\":\"100\", \"amount\":10}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/event",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["event"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Should create account and return balance 10\", function () {",
+              "    pm.response.to.have.status(201);",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('destination');",
+              "    pm.expect(jsonData.destination.balance).to.eql(10);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Deposit into existing account",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"type\":\"deposit\", \"destination\":\"100\", \"amount\":10}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/event",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["event"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Should deposit into existing account and return balance 20\", function () {",
+              "    pm.response.to.have.status(201);",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('destination');",
+              "    pm.expect(jsonData.destination.balance).to.eql(20);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfer between accounts",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"type\":\"transfer\", \"origin\":\"100\", \"destination\":\"200\", \"amount\":5}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/event",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["event"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Should transfer amount between accounts\", function () {",
+              "    pm.response.to.have.status(201);",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('origin');",
+              "    pm.expect(jsonData.origin.balance).to.eql(10);",
+              "    pm.expect(jsonData).to.have.property('destination');",
+              "    pm.expect(jsonData.destination.balance).to.eql(5);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Withdraw from account",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"type\":\"withdraw\", \"origin\":\"100\", \"amount\":5}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/event",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["event"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Should withdraw from account and return balance 15\", function () {",
+              "    pm.response.to.have.status(201);",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('origin');",
+              "    pm.expect(jsonData.origin.balance).to.eql(15);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get balance for existing account",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/balance?account_id=100",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["balance"],
+          "query": [{ "key": "account_id", "value": "100" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Should return balance 20\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(pm.response.text()).to.eql('20');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Withdraw from non-existing account",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"type\":\"withdraw\", \"origin\":\"200\", \"amount\":10}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/event",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["event"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Should return 404 and body 0\", function () {",
+              "    pm.response.to.have.status(404);",
+              "    pm.expect(pm.response.text()).to.eql('0');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfer from non-existing account",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"type\":\"transfer\", \"origin\":\"200\", \"destination\":\"300\", \"amount\":15}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/event",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["event"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Should return 404 and body 0\", function () {",
+              "    pm.response.to.have.status(404);",
+              "    pm.expect(pm.response.text()).to.eql('0');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
