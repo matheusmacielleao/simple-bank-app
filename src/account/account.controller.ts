@@ -18,7 +18,7 @@ export class AccountController {
   @Post('/reset')
   async reset(@Res() res: Response) {
     await this.accountService.reset();
-    res.send('OK');
+    res.status(HttpStatus.OK).send('OK');
   }
 
   @Get('/balance')
@@ -28,7 +28,7 @@ export class AccountController {
   ) {
     try {
       const balance = await this.accountService.getBalance(accountId);
-      res.send(balance);
+      res.status(200).send(balance + '');
     } catch (error) {
       if (error instanceof NotFoundException) {
         res.status(HttpStatus.NOT_FOUND).send('0');
