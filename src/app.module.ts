@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AccountController } from 'account/account.controller';
-import { Account } from 'account/account.model';
+import { Account } from 'account/models/account.model';
 import { AccountService } from 'account/account.service';
-import { Transaction } from 'account/transaction.model';
+import { Transaction } from 'account/models/transaction.model';
+import { EventController } from 'event/event.controller';
+import { EventService } from 'event/event.service';
 
 @Module({
   imports: [
@@ -16,7 +18,7 @@ import { Transaction } from 'account/transaction.model';
     TypeOrmModule.forFeature([Account, Transaction]),
   ],
   exports: [TypeOrmModule.forFeature([Account, Transaction])],
-  controllers: [AccountController],
-  providers: [AccountService],
+  controllers: [AccountController, EventController],
+  providers: [AccountService, EventService],
 })
 export class AppModule {}

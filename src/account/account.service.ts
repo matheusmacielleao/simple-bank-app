@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Account } from './account.model';
-import { Transaction } from './transaction.model';
+import { Transaction } from './models/transaction.model';
+import { Account } from './models/account.model';
 
 @Injectable()
 export class AccountService {
@@ -26,16 +26,13 @@ export class AccountService {
   }
 
   async deposit(accountId: string, amount: number): Promise<Account> {
-    let account = await this.accountRepository.findOneBy({ id: accountId });
+    const accountExists = await this.accountRepository.findOneBy({
+      id: accountId,
+    });
 
-    if (!account) {
-      account = this.accountRepository.create({
-        id: accountId,
-        balance: amount,
-      });
-    } else {
-      account.balance += amount;
-    }
+    const account = accountExists
+      ? { id: accountId, balance: accountExists.balance + amount }
+      : { id: accountId, balance: amount };
 
     return this.accountRepository.save(account);
   }
@@ -67,21 +64,26 @@ export class AccountService {
     });
   }
 
-  async transfer(originId: string, destinationId: string, amount: number) {
+  async transfer(
+    originId: string,
+    destinationId: string,
+    amount: number,
+  ): Promise<{ origin: Account; destination: Account }> {
     return this.dataSource.transaction(async (manager) => {
-      const origin = await manager.findOne(Account, {
-        where: { id: originId },
-      });
+      let [origin, destination] = await Promise.all([
+        manager.findOne(Account, {
+          where: { id: originId },
+        }),
+        manager.findOne(Account, {
+          where: { id: destinationId },
+        }),
+      ]);
 
       if (!origin || origin.balance < amount) {
         throw new NotFoundException(
           'Insufficient balance or account not found',
         );
       }
-
-      let destination = await manager.findOne(Account, {
-        where: { id: destinationId },
-      });
 
       if (!destination) {
         destination = manager.create(Account, {
@@ -102,8 +104,7 @@ export class AccountService {
       origin.balance -= amount;
       destination.balance += amount;
 
-      await manager.save(origin);
-      await manager.save(destination);
+      await Promise.all([manager.save(origin), manager.save(destination)]);
       await manager.save(transaction);
 
       return { origin, destination };
